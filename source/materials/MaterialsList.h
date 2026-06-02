@@ -49,11 +49,11 @@ namespace materials {
   // Argon
   G4Material* GAr(G4double pressure=STP_Pressure,
 			            G4double temperature=STP_Temperature);
-  // Mixture Xe+Ar
+  // Mixture Xe+Ar. percXe is interpreted as a molar percentage.
   G4Material* GXeAr(G4double pressure=STP_Pressure,
 			              G4double temperature=STP_Temperature, G4double percXe=0.);
 
-  // Mixture Xe+He
+  // Mixture enriched Xe+He. percXe is interpreted as a molar percentage.
   G4Material* GXeHe(G4double pressure=STP_Pressure,
                     G4double temperature=STP_Temperature,
 			              G4double percXe=98,

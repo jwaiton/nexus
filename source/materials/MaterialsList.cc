@@ -220,13 +220,27 @@ namespace materials {
       {130, 4.071*perCent}, {131, 21.2324*perCent}, {132, 26.9086*perCent}, {134, 10.4357*perCent}, {136, 8.8573*perCent}
     };
 
-    G4double GXeNatural_density = CalculateGasDensityFromIsotopicComposition(pressure, temperature, isotopicComposition);
-
     if (mat == 0) {
 
+      G4double xe_molar_fraction = percXe * perCent;
+      if (xe_molar_fraction < 0. || xe_molar_fraction > 1.) {
+        G4Exception("[MaterialsList]", "GXeAr()", FatalException,
+                    "Xe percentage for GXeAr must be between 0 and 100.");
+      }
+
+      G4double ar_molar_fraction = 1. - xe_molar_fraction;
+      G4double xe_molar_mass = AverageXenonMolarMass(isotopicComposition);
+      G4double ar_molar_mass = 39.962383123 * g/mole;
+      G4double mixture_molar_mass =
+        xe_molar_fraction * xe_molar_mass + ar_molar_fraction * ar_molar_mass;
+
+      G4double xe_mass_fraction =
+        xe_molar_fraction * xe_molar_mass / mixture_molar_mass;
+      G4double ar_mass_fraction =
+        ar_molar_fraction * ar_molar_mass / mixture_molar_mass;
+
       mat = new G4Material(name,
-        (1-(percXe/100.))*ArgonDensity(pressure) +
-        percXe/100.*GXeNatural_density,
+        CalculateGasDensityFromMolarMass(pressure, temperature, mixture_molar_mass),
         2, kStateGas, temperature, pressure);
 
       G4Element* NaturalXe = new G4Element("GXeNatural", "Xe", isotopicComposition.size());
@@ -241,10 +255,10 @@ namespace materials {
         }
 
 
-      G4Element* NaturalAr  = new G4Element("Argon", "Ar", 18, 39.962383123*g/mole);
+      G4Element* NaturalAr  = new G4Element("Argon", "Ar", 18, ar_molar_mass);
 
-      mat->AddElement(NaturalAr, (100-percXe)*perCent);
-      mat->AddElement(NaturalXe, percXe*perCent);
+      mat->AddElement(NaturalAr, ar_mass_fraction);
+      mat->AddElement(NaturalXe, xe_mass_fraction);
     }
 
       return mat;
@@ -259,6 +273,7 @@ namespace materials {
   {
     G4String name = "GXeHe";
 
+    // This Xe/He material currently uses enriched xenon.
     std::vector<std::pair<int, double>> isotopicComposition = {
       {129, 0.0656392*perCent}, {130, 0.0656392*perCent}, {131, 0.234361*perCent},
       {132, 0.708251*perCent}, {134, 8.6645*perCent}, {136, 90.2616*perCent}
