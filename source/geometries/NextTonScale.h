@@ -48,6 +48,7 @@ namespace nexus {
     G4Material* xenon_gas_;
 
     G4String gas_;
+    G4String xe_he_xe_type_;
     G4double gas_pressure_, gas_temperature_;
     G4double detector_diam_, detector_length_;
     G4double tank_size_, tank_thickn_, water_thickn_;

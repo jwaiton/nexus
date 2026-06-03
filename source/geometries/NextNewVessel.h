@@ -114,6 +114,7 @@ namespace nexus {
 
     // Gas being used
     G4String gas_;
+    G4String xe_he_xe_type_;
     G4double xe_perc_;
     G4int helium_mass_num_;
 

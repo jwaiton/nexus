@@ -106,6 +106,7 @@ namespace nexus {
     sc_yield_(25510. * 1/MeV),
     e_lifetime_(1000. * ms),
     gas_("naturalXe"),
+    xe_he_xe_type_("naturalXe"),
     xe_perc_(100.),
     helium_mass_num_(4),
     //   source_(false),
@@ -153,6 +154,10 @@ namespace nexus {
 			  "Percentage of xenon used in mixtures");
     msg_->DeclareProperty("helium_A", helium_mass_num_,
 			  "Mass number for helium used, 3 or 4");
+    G4GenericMessenger::Command& xe_he_xe_type_cmd =
+      msg_->DeclareProperty("XeHeXenonType", xe_he_xe_type_,
+                            "Xenon type used in XeHe mixtures.");
+    xe_he_xe_type_cmd.SetCandidates("naturalXe enrichedXe depletedXe");
 
     // msg_->DeclareProperty("source", source_, "Radioactive source being used");
     msg_->DeclareProperty("internal_calib_port", calib_port_, "Calibration port being used");
@@ -426,7 +431,7 @@ void NextNewVessel::Construct()
       vessel_gas_mat->SetMaterialPropertiesTable(opticalprops::GAr(sc_yield_, e_lifetime_));
     } else if (gas_ == "XeHe") {
       vessel_gas_mat =  materials::GXeHe(pressure_, temperature_,
-					     xe_perc_, helium_mass_num_);
+					     xe_perc_, helium_mass_num_, xe_he_xe_type_);
       vessel_gas_mat->SetMaterialPropertiesTable(opticalprops::GXe(pressure_, temperature_, sc_yield_, e_lifetime_));
     } else {
       G4Exception("[NextNewVessel]", "Construct()", FatalException,

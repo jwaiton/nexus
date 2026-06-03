@@ -34,7 +34,8 @@ REGISTER_CLASS(NextTonScale, GeometryBase)
 NextTonScale::NextTonScale():
   GeometryBase(),
   msg_(nullptr),
-  gas_("naturalXe"), gas_pressure_(15.*bar), gas_temperature_(300.*kelvin),
+  gas_("naturalXe"), xe_he_xe_type_("naturalXe"),
+  gas_pressure_(15.*bar), gas_temperature_(300.*kelvin),
   detector_diam_(0.), detector_length_(0.),
   tank_size_(0.), tank_thickn_(1.*cm), water_thickn_(3.*m),
   vessel_thickn_(1.5*mm), ics_thickn_(12.*cm), endcap_hollow_(20.*cm),
@@ -459,10 +460,10 @@ void NextTonScale::DefineGas()
     xenon_gas_ = materials::GXeDepleted(gas_pressure_, gas_temperature_);
   else if (gas_ == "XeHe")
     xenon_gas_ = materials::GXeHe(gas_pressure_, gas_temperature_,
-				      xe_perc_, helium_mass_num_);
+				      xe_perc_, helium_mass_num_, xe_he_xe_type_);
   else
     G4Exception("[NextTonScale]", "DefineGas()", FatalException,
-    "Unknown xenon gas type. Valid options are naturalXe, enrichedXe or depletedXe.");
+    "Unknown xenon gas type. Valid options are naturalXe, enrichedXe, depletedXe or XeHe.");
 }
 
 
@@ -544,6 +545,11 @@ void NextTonScale::DefineConfigurationParameters()
     msg_->DeclareProperty("helium_A", helium_mass_num_,
 			  "Mass number for helium used, 3 or 4");
   type_helium_cmd.SetParameterName("helium_A", false);
+
+  G4GenericMessenger::Command& xe_he_xe_type_cmd =
+    msg_->DeclareProperty("XeHeXenonType", xe_he_xe_type_,
+                          "Xenon type used in XeHe mixtures.");
+  xe_he_xe_type_cmd.SetCandidates("naturalXe enrichedXe depletedXe");
 
 
   // Geometry visibilities /////////////////////////////////
