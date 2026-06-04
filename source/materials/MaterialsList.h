@@ -9,6 +9,7 @@
 #ifndef MATERIALS_LIST_H
 #define MATERIALS_LIST_H
 
+#include <G4String.hh>
 #include <globals.hh>
 #include <vector>
 
@@ -49,15 +50,16 @@ namespace materials {
   // Argon
   G4Material* GAr(G4double pressure=STP_Pressure,
 			            G4double temperature=STP_Temperature);
-  // Mixture Xe+Ar
+  // Mixture Xe+Ar. percXe is interpreted as a molar percentage.
   G4Material* GXeAr(G4double pressure=STP_Pressure,
 			              G4double temperature=STP_Temperature, G4double percXe=0.);
 
-  // Mixture Xe+He
+  // Mixture Xe+He. percXe is interpreted as a molar percentage.
   G4Material* GXeHe(G4double pressure=STP_Pressure,
                     G4double temperature=STP_Temperature,
 			              G4double percXe=98,
-			              G4int mass_num=4);
+			              G4int mass_num=4,
+                    G4String xe_type="naturalXe");
 
 
   // Stainless Steel (grade 304L)

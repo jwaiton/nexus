@@ -73,6 +73,7 @@ namespace nexus {
     // Visibility
     visibility_(0),
     gas_("enrichedXe"),
+    xe_he_type_("naturalXe"),
     helium_mass_num_(4),
     xe_perc_(100.),
     th_source_("no_source"),
@@ -104,6 +105,10 @@ namespace nexus {
     msg_->DeclareProperty("gas", gas_, "Gas being used");
     msg_->DeclareProperty("XePercentage", xe_perc_, "Percentage of xenon used in mixtures");
     msg_->DeclareProperty("helium_A", helium_mass_num_, "Mass number for helium used, 3 or 4");
+    G4GenericMessenger::Command& xe_he_type_cmd =
+      msg_->DeclareProperty("XeHeXenonType", xe_he_type_,
+                            "Xenon type used in XeHe mixtures.");
+    xe_he_type_cmd.SetCandidates("naturalXe enrichedXe depletedXe");
 
     G4GenericMessenger::Command& pressure_cmd =
       msg_->DeclareProperty("pressure", pressure_, "Xenon pressure");
@@ -341,7 +346,7 @@ namespace nexus {
       vessel_gas_mat =  materials::GXeDepleted(pressure_, temperature_);
     } else if  (gas_ == "XeHe") {
       vessel_gas_mat = materials::GXeHe(pressure_, 300. * kelvin,
-					    xe_perc_, helium_mass_num_);
+					    xe_perc_, helium_mass_num_, xe_he_type_);
     } else if  (gas_ == "GAr") {
       vessel_gas_mat = materials::GAr(pressure_, temperature_);
     } else {

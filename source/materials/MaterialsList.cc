@@ -22,6 +22,58 @@ using namespace nexus;
 using namespace CLHEP;
 
 namespace materials {
+    std::vector<std::pair<int, double>> NaturalXenonIsotopicComposition()
+    {
+      return {
+        {124, 0.0952*perCent}, {126, 0.089*perCent}, {128, 1.9102*perCent},
+        {129, 26.4006*perCent}, {130, 4.071*perCent},
+        {131, 21.2324*perCent}, {132, 26.9086*perCent},
+        {134, 10.4357*perCent}, {136, 8.8573*perCent}
+      };
+    }
+
+    std::vector<std::pair<int, double>> EnrichedXenonIsotopicComposition()
+    {
+      return {
+        {129, 0.0656392*perCent}, {130, 0.0656392*perCent},
+        {131, 0.234361*perCent}, {132, 0.708251*perCent},
+        {134, 8.6645*perCent}, {136, 90.2616*perCent}
+      };
+    }
+
+    std::vector<std::pair<int, double>> DepletedXenonIsotopicComposition()
+    {
+      return {
+        {124, 0.102*perCent}, {126, 0.201*perCent},
+        {128, 3.065*perCent}, {129, 24.900*perCent},
+        {130, 5.361*perCent}, {131, 23.280*perCent},
+        {132, 30.666*perCent}, {134, 9.822*perCent},
+        {136, 2.602*perCent}
+      };
+    }
+
+    std::vector<std::pair<int, double>> XenonIsotopicComposition(G4String xe_type)
+    {
+      if (xe_type == "naturalXe") return NaturalXenonIsotopicComposition();
+      if (xe_type == "enrichedXe") return EnrichedXenonIsotopicComposition();
+      if (xe_type == "depletedXe") return DepletedXenonIsotopicComposition();
+
+      G4Exception("[MaterialsList]", "XenonIsotopicComposition()", FatalException,
+                  "Unknown xenon type. Valid options are naturalXe, enrichedXe, or depletedXe.");
+      return NaturalXenonIsotopicComposition();
+    }
+
+    G4String XenonTypeLabel(G4String xe_type)
+    {
+      if (xe_type == "naturalXe") return "Natural";
+      if (xe_type == "enrichedXe") return "Enriched";
+      if (xe_type == "depletedXe") return "Depleted";
+
+      G4Exception("[MaterialsList]", "XenonTypeLabel()", FatalException,
+                  "Unknown xenon type. Valid options are naturalXe, enrichedXe, or depletedXe.");
+      return "Natural";
+    }
+
     // Calculation of Compressibilty factor from https://next.ific.uv.es/DocDB/0011/001183/001/GasDensity_2021-04-23.pdf
     G4double CompressibilityFactor(G4double pressure, G4double temperature) {
         double T_r = temperature/(289.733*kelvin);
@@ -31,32 +83,38 @@ namespace materials {
         return z;
     }
 
+    G4double AverageXenonMolarMass(const std::vector<std::pair<int, double>>& isotopicComposition)
+    {
+      G4double average_molar_mass = 0.;
+
+      for (const auto& iso : isotopicComposition) {
+        G4int mass_number = iso.first;
+        G4double abundance = iso.second;
+        average_molar_mass += XenonMassPerMole(mass_number) * abundance;
+      }
+
+      return average_molar_mass;
+    }
+
+    G4double CalculateGasDensityFromMolarMass(G4double pressure, G4double temperature,
+                                              G4double molar_mass)
+    {
+      const G4double R = 8.314 * joule/(mole*kelvin); // Ideal gas constant
+      G4double z = CompressibilityFactor(pressure, temperature);
+      return pressure * molar_mass / (z * R * temperature);
+    }
+
     // Function to calculate gas density based on Xe isotopic composition
     G4double CalculateGasDensityFromIsotopicComposition(G4double pressure, G4double temperature,
-     const std::vector<std::pair<int, double>>& isotopicComposition)
-      {
-        const double R = 8.314*joule/(mole*kelvin); // Ideal gas constant
-        double average_molar_mass = 0.0;
-
-        for (const auto& iso : isotopicComposition) {
-            int mass_number = iso.first;
-            double percentage = iso.second;
-            double molar_mass = XenonMassPerMole(mass_number);
-            average_molar_mass += molar_mass * percentage;
-        }
-
-
-        double z = CompressibilityFactor(pressure, temperature);
-        double density = (pressure * average_molar_mass) / (z * R * temperature);
-        return density;
+      const std::vector<std::pair<int, double>>& isotopicComposition)
+    {
+      return CalculateGasDensityFromMolarMass(pressure, temperature,
+        AverageXenonMolarMass(isotopicComposition));
     }
 
   G4Material* GXe(G4double pressure, G4double temperature) {
-    std::vector<std::pair<int, double>> isotopicComposition = {
-      {124, 0.095*perCent}, {126, 0.089*perCent}, {128, 1.910*perCent},
-      {129, 26.401*perCent}, {130, 4.071*perCent}, {131, 21.232*perCent},
-      {132, 26.909*perCent}, {134,10.436*perCent}, {136, 8.857*perCent}
-    };
+    std::vector<std::pair<int, double>> isotopicComposition =
+      NaturalXenonIsotopicComposition();
 
     G4double gas_density = CalculateGasDensityFromIsotopicComposition(pressure, temperature, isotopicComposition);
     G4Material* mat = GXe_bydensity(gas_density, temperature, pressure);
@@ -78,10 +136,8 @@ namespace materials {
   }
   
   G4Material* GXeEnriched(G4double pressure, G4double temperature) {
-    std::vector<std::pair<int, double>> isotopicComposition = {
-      {129, 0.0656392*perCent}, {130, 0.0656392*perCent}, {131, 0.234361*perCent},
-      {132, 0.708251*perCent}, {134, 8.6645*perCent}, {136, 90.2616*perCent}
-    };
+    std::vector<std::pair<int, double>> isotopicComposition =
+      EnrichedXenonIsotopicComposition();
 
     G4double gas_density = CalculateGasDensityFromIsotopicComposition(pressure, temperature, isotopicComposition);
     G4Material* mat = GXeEnriched_bydensity(gas_density, temperature, pressure, isotopicComposition);
@@ -118,10 +174,8 @@ namespace materials {
   }
 
   G4Material* GXeDepleted(G4double pressure, G4double temperature) {
-    std::vector<std::pair<int, double>> isotopicComposition = {
-      {124, 0.102*perCent}, {126, 0.201*perCent}, {128, 3.065*perCent}, {129, 24.900*perCent}, {130, 5.361*perCent},
-      {131, 23.280*perCent}, {132, 30.666*perCent}, {134, 9.822*perCent}, {136, 2.602*perCent}
-    };
+    std::vector<std::pair<int, double>> isotopicComposition =
+      DepletedXenonIsotopicComposition();
 
     G4double gas_density = CalculateGasDensityFromIsotopicComposition(pressure, temperature, isotopicComposition);
     G4Material* mat = GXeDepleted_bydensity(gas_density, temperature, pressure, isotopicComposition);
@@ -206,18 +260,30 @@ namespace materials {
 
     G4Material* mat = G4Material::GetMaterial(name, false);
 
-    std::vector<std::pair<int, double>> isotopicComposition = {
-      {124, 0.0952*perCent}, {126, 0.089*perCent}, {128, 1.9102*perCent}, {129, 26.4006*perCent},
-      {130, 4.071*perCent}, {131, 21.2324*perCent}, {132, 26.9086*perCent}, {134, 10.4357*perCent}, {136, 8.8573*perCent}
-    };
-
-    G4double GXeNatural_density = CalculateGasDensityFromIsotopicComposition(pressure, temperature, isotopicComposition);
+    std::vector<std::pair<int, double>> isotopicComposition =
+      NaturalXenonIsotopicComposition();
 
     if (mat == 0) {
 
+      G4double xe_molar_fraction = percXe * perCent;
+      if (xe_molar_fraction < 0. || xe_molar_fraction > 1.) {
+        G4Exception("[MaterialsList]", "GXeAr()", FatalException,
+                    "Xe percentage for GXeAr must be between 0 and 100.");
+      }
+
+      G4double ar_molar_fraction = 1. - xe_molar_fraction;
+      G4double xe_molar_mass = AverageXenonMolarMass(isotopicComposition);
+      G4double ar_molar_mass = 39.962383123 * g/mole;
+      G4double mixture_molar_mass =
+        xe_molar_fraction * xe_molar_mass + ar_molar_fraction * ar_molar_mass;
+
+      G4double xe_mass_fraction =
+        xe_molar_fraction * xe_molar_mass / mixture_molar_mass;
+      G4double ar_mass_fraction =
+        ar_molar_fraction * ar_molar_mass / mixture_molar_mass;
+
       mat = new G4Material(name,
-        (1-(percXe/100.))*ArgonDensity(pressure) +
-        percXe/100.*GXeNatural_density,
+        CalculateGasDensityFromMolarMass(pressure, temperature, mixture_molar_mass),
         2, kStateGas, temperature, pressure);
 
       G4Element* NaturalXe = new G4Element("GXeNatural", "Xe", isotopicComposition.size());
@@ -232,10 +298,10 @@ namespace materials {
         }
 
 
-      G4Element* NaturalAr  = new G4Element("Argon", "Ar", 18, 39.962383123*g/mole);
+      G4Element* NaturalAr  = new G4Element("Argon", "Ar", 18, ar_molar_mass);
 
-      mat->AddElement(NaturalAr, (100-percXe)*perCent);
-      mat->AddElement(NaturalXe, percXe*perCent);
+      mat->AddElement(NaturalAr, ar_mass_fraction);
+      mat->AddElement(NaturalXe, xe_mass_fraction);
     }
 
       return mat;
@@ -246,45 +312,55 @@ namespace materials {
 
   G4Material* GXeHe(G4double pressure,
           G4double temperature,
-          G4double percXe, G4int mass_num)
+          G4double percXe, G4int mass_num, G4String xe_type)
   {
-    G4String name = "GXeHe";
+    G4String xenon_label = XenonTypeLabel(xe_type);
+    G4String name = "GXeHe" + xenon_label;
 
-    std::vector<std::pair<int, double>> isotopicComposition = {
-      {129, 0.0656392*perCent}, {130, 0.0656392*perCent}, {131, 0.234361*perCent},
-      {132, 0.708251*perCent}, {134, 8.6645*perCent}, {136, 90.2616*perCent}
-    };
-
-    G4double GXeEnriched_density = CalculateGasDensityFromIsotopicComposition(pressure, temperature, isotopicComposition);
+    std::vector<std::pair<int, double>> isotopicComposition =
+      XenonIsotopicComposition(xe_type);
 
     G4Material* mat = G4Material::GetMaterial(name, false);
 
     if (mat == 0) {
 
-      G4double prop_xe = percXe * perCent;
-      G4double prop_he = 1. - prop_xe;
+      G4double xe_molar_fraction = percXe * perCent;
+      if (xe_molar_fraction < 0. || xe_molar_fraction > 1.) {
+        G4Exception("[MaterialsList]", "GXeHe()", FatalException,
+                    "Xe percentage for GXeHe must be between 0 and 100.");
+      }
+
+      G4double he_molar_fraction = 1. - xe_molar_fraction;
+      G4double xe_molar_mass = AverageXenonMolarMass(isotopicComposition);
+      G4double he_molar_mass = HeliumMassPerMole(mass_num);
+      G4double mixture_molar_mass =
+        xe_molar_fraction * xe_molar_mass + he_molar_fraction * he_molar_mass;
+
+      G4double xe_mass_fraction =
+        xe_molar_fraction * xe_molar_mass / mixture_molar_mass;
+      G4double he_mass_fraction =
+        he_molar_fraction * he_molar_mass / mixture_molar_mass;
 
       mat = new G4Material(name,
-        prop_xe * GXeEnriched_density
-        + prop_he * HeliumDensity(pressure),
+        CalculateGasDensityFromMolarMass(pressure, temperature, mixture_molar_mass),
         2, kStateGas, temperature, pressure);
 
 
-      G4Element* enrichedXe = new G4Element("GXeEnriched", "enrichedXe", isotopicComposition.size());
+      G4Element* xenon = new G4Element(name + "Xe", "Xe", isotopicComposition.size());
       for (const auto& isotopeInfo : isotopicComposition) {
             int massNumber = isotopeInfo.first;
             double abundance = isotopeInfo.second;
             G4String isotopeName = "Xe" + std::to_string(massNumber);
             G4Isotope* isotope = new G4Isotope(isotopeName, 54, massNumber, XenonMassPerMole(massNumber));
-            enrichedXe->AddIsotope(isotope, abundance); 
+            xenon->AddIsotope(isotope, abundance);
         }
       G4Element * Helium = new G4Element("Helium", "Helium", 1);
       G4Isotope * He     = new G4Isotope("He", 2, mass_num,
                 HeliumMassPerMole(mass_num));
       Helium->AddIsotope(He, 100 * perCent);
 
-      mat->AddElement(Helium, prop_he);
-      mat->AddElement(enrichedXe, prop_xe);
+      mat->AddElement(Helium, he_mass_fraction);
+      mat->AddElement(xenon, xe_mass_fraction);
 
 
     }

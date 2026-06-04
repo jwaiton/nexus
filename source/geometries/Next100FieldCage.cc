@@ -757,7 +757,8 @@ void Next100FieldCage::BuildELRegion()
       el_field->SetLightYield(ArgonELLightYield(ELelectric_field_, pressure_));
     }
     // Note, the XeHe adopts pure xenon scintillation yeild. This will need to be updated. 
-    else if (gas_->GetName() == "GXe" || gas_->GetName() == "GXeEnriched" || gas_->GetName() == "GXeDepleted" || gas_->GetName() == "GXeHe"){
+    else if (gas_->GetName() == "GXe" || gas_->GetName() == "GXeEnriched" ||
+             gas_->GetName() == "GXeDepleted" || gas_->GetName().find("GXeHe") == 0){
       el_field->SetLightYield(XenonELLightYield(ELelectric_field_, pressure_));
     } else {
       G4Exception("[Next100FieldCage]", "BuildELRegion()", FatalException,

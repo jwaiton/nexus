@@ -114,6 +114,8 @@ namespace nexus {
 
     // Gas being used
     G4String gas_;
+    // Xenon type to mix with helium in XeHe gas.
+    G4String xe_he_type_;
     G4double xe_perc_;
     G4int helium_mass_num_;
 
